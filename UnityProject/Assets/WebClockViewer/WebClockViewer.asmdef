@@ -1,7 +1,10 @@
 {
     "name": "WebClockViewer",
     "rootNamespace": "WebClockViewer",
-    "references": [],
+    "references": [
+        "VContainer",
+        "UniTask"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
