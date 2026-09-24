@@ -3,7 +3,7 @@
     "short_name": "WebClockViewer",
     "start_url": "index.html",
     "display": "fullscreen",
-    "background_color": "#1F1F20",
+    "background_color": "#10131C",
     "theme_color": "#000",
     "description": "",
     "icons": [{
