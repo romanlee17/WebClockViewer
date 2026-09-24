@@ -10,7 +10,11 @@ namespace WebClockViewer
     internal class ClockViewer : MonoBehaviour, IAsyncInitializable
     {
         [SerializeField] private Text _utcTimeText;
+        [SerializeField] private Text _utcDateText;
         [SerializeField] private Text _localTimeText;
+        [SerializeField] private Text _localDateText;
+        [SerializeField] private AnalogClock _utcAnalogClock;
+        [SerializeField] private AnalogClock _localAnalogClock;
 
         /// <summary>
         /// Shows the current time and starts ticking the labels. The ticking keeps running past the
@@ -45,8 +49,13 @@ namespace WebClockViewer
             DateTime currentDate = MirraSDK.Time.CurrentDate;
             DateTime utcDate = currentDate.ToUniversalTime();
 
-            _utcTimeText.text = $"UTC+0: {utcDate:HH:mm:ss}";
+            _utcTimeText.text = $"UTC time: {utcDate:HH:mm:ss}";
+            _utcDateText.text = $"UTC date: {utcDate:yyyy-MM-dd}";
             _localTimeText.text = $"Local time: {currentDate:HH:mm:ss}";
+            _localDateText.text = $"Local date: {currentDate:yyyy-MM-dd}";
+
+            _utcAnalogClock.SetTime(utcDate);
+            _localAnalogClock.SetTime(currentDate);
         }
     }
 }

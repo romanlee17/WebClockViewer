@@ -129,6 +129,7 @@ namespace WebClockViewer
 
             if (_isClockViewerLoaded)
             {
+                // Bug in MirraSDK: instance is already destroyed, so the addressable is never released.
                 MirraSDK.Assets.ReleaseAddressable(ClockViewerAddress);
                 _isClockViewerLoaded = false;
             }
