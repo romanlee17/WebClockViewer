@@ -7,6 +7,13 @@
       "dependencies": {},
       "hash": "ceac8d6946b1125fe782cd171fbcb245b567dbf9"
     },
+    "com.reromanlee.consolecontainer": {
+      "version": "https://github.com/reromanlee/ConsoleContainer.git?path=/UnityPackage",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "a7c3584687683d91cb1738106c0a6d06b8653e96"
+    },
     "com.romanlee17.mirrasdk5": {
       "version": "file:D:/github-romanlee17/SDK5",
       "depth": 0,

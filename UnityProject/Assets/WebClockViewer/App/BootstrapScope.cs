@@ -1,4 +1,6 @@
 using Cysharp.Threading.Tasks;
+using MirraGames.SDK;
+using reromanlee.ConsoleContainer;
 using System;
 using System.Threading;
 using UnityEngine;
@@ -10,9 +12,14 @@ namespace WebClockViewer
     [UnityEngine.Scripting.Preserve]
     internal sealed class BootstrapScope : LifetimeScope
     {
+        private static IConsoleInstance _consoleInstance;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void OnAfterSceneLoad()
+        private static void AfterSceneLoad()
         {
+            _consoleInstance = new ConsoleInstance("App");
+            _consoleInstance.CreateText(nameof(BootstrapScope), nameof(AfterSceneLoad));
+
             GameObject bootstrapObject = new(nameof(BootstrapScope));
             bootstrapObject.AddComponent<BootstrapScope>();
             DontDestroyOnLoad(bootstrapObject);
@@ -30,14 +37,19 @@ namespace WebClockViewer
 
         }
 
-        private async void Start()
+        private void Start()
         {
-
+            _consoleInstance.CreateText(this, nameof(Start));
+            MirraSDK.WaitForProviders(() =>
+            {
+                _consoleInstance.CreateText(this, nameof(MirraSDK), "onInitialized called");
+                MainEntry().Forget();
+            });
         }
 
         private async UniTask MainEntry()
         {
-
+            _consoleInstance.CreateText(this, nameof(MainEntry));
         }
 
         private void CancelAppLifetime()

@@ -3,7 +3,9 @@
     "rootNamespace": "WebClockViewer",
     "references": [
         "VContainer",
-        "UniTask"
+        "UniTask",
+        "MirraGames.SDK",
+        "reromanlee.ConsoleContainer"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
