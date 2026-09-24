@@ -43,6 +43,7 @@ namespace WebClockViewer
 
             builder.RegisterInstance<IConsoleInstance>(_consoleInstance);
             builder.Register<ClockTimeService>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.Register<TimeEditingFlow>(Lifetime.Singleton);
         }
 
         private void Start()
@@ -72,6 +73,9 @@ namespace WebClockViewer
                 ClockViewer clockViewer = Container.Instantiate(clockViewerPrefab).GetComponent<ClockViewer>();
                 await clockViewer.InitializeAsync(cancellationToken);
 
+                TimeEditingFlow timeEditingFlow = Container.Resolve<TimeEditingFlow>();
+                clockViewer.EditRequested += zone => EditTime(timeEditingFlow, zone, cancellationToken).Forget();
+
                 _consoleInstance.CreateText(this, nameof(MainEntry), "clock viewer initialized");
             }
             catch (OperationCanceledException)
@@ -90,6 +94,23 @@ namespace WebClockViewer
             UniTaskCompletionSource synchronizedSource = new();
             WebDateTime.WaitForSynchronization(() => synchronizedSource.TrySetResult());
             await synchronizedSource.Task.AttachExternalCancellation(cancellationToken);
+        }
+
+        private async UniTaskVoid EditTime(TimeEditingFlow timeEditingFlow, ClockZone zone, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await timeEditingFlow.EditAsync(zone, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // The app ended while the picker was open.
+            }
+            catch (Exception exception)
+            {
+                // A failed edit leaves the clocks as they were, so the app keeps running.
+                _consoleInstance.CreateError(this, nameof(EditTime), exception.ToString());
+            }
         }
 
         private void CancelAppLifetime()

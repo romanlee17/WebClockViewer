@@ -15,13 +15,26 @@ namespace WebClockViewer
         [SerializeField] private Text _localDateText;
         [SerializeField] private AnalogClock _utcAnalogClock;
         [SerializeField] private AnalogClock _localAnalogClock;
+        [SerializeField] private Button _utcClockButton;
+        [SerializeField] private Button _localClockButton;
+        [SerializeField] private Text _utcClockLabel;
+        [SerializeField] private Text _localClockLabel;
 
         private IClockTime _clockTime;
+
+        /// <summary>Raised when the user taps a clock to edit its time.</summary>
+        public event Action<ClockZone> EditRequested;
 
         [Inject]
         public void Construct(IClockTime clockTime)
         {
             _clockTime = clockTime;
+        }
+
+        private void Awake()
+        {
+            _utcClockButton.onClick.AddListener(() => EditRequested?.Invoke(ClockZone.Utc));
+            _localClockButton.onClick.AddListener(() => EditRequested?.Invoke(ClockZone.Local));
         }
 
         /// <summary>
@@ -70,6 +83,10 @@ namespace WebClockViewer
             _utcDateText.text = $"UTC date: {utcDate:yyyy-MM-dd}";
             _localTimeText.text = $"Local time: {currentDate:HH:mm:ss}";
             _localDateText.text = $"Local date: {currentDate:yyyy-MM-dd}";
+
+            string customSuffix = _clockTime.IsCustom ? " · custom" : string.Empty;
+            _utcClockLabel.text = "UTC" + customSuffix;
+            _localClockLabel.text = "Local" + customSuffix;
 
             _utcAnalogClock.SetTime(utcDate);
             _localAnalogClock.SetTime(currentDate);
