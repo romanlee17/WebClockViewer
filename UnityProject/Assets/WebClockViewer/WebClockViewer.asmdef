@@ -5,6 +5,7 @@
         "VContainer",
         "UniTask",
         "MirraGames.SDK",
+        "MirraGames.SDK.Common",
         "reromanlee.ConsoleContainer"
     ],
     "includePlatforms": [],
