@@ -42,6 +42,7 @@ namespace WebClockViewer
             _consoleInstance.CreateText(this, nameof(Configure));
 
             builder.RegisterInstance<IConsoleInstance>(_consoleInstance);
+            builder.Register<ClockTimeService>(Lifetime.Singleton).AsImplementedInterfaces();
         }
 
         private void Start()
