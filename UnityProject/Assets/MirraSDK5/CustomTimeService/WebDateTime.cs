@@ -27,10 +27,10 @@ namespace CustomTimeService
         /// Both endpoints allow cross-origin requests, which WebGL builds need, and answer with
         /// no-cache headers, so the browser never serves a stale time.
         /// </summary>
-        private static readonly (string url, TimeParser parser)[] timeSources =
+        private static readonly (string name, string url, TimeParser parser)[] timeSources =
         {
-            ("https://time.akamai.com/?ms", TryParseAkamai),
-            ("https://www.cloudflare.com/cdn-cgi/trace", TryParseCloudflare),
+            ("Akamai", "https://time.akamai.com/?ms", TryParseAkamai),
+            ("Cloudflare", "https://www.cloudflare.com/cdn-cgi/trace", TryParseCloudflare),
         };
 
         private const int RequestTimeoutSeconds = 5;
@@ -88,7 +88,7 @@ namespace CustomTimeService
 
         private IEnumerator SyncFromSources()
         {
-            foreach ((string url, TimeParser parser) in timeSources)
+            foreach ((string name, string url, TimeParser parser) in timeSources)
             {
                 using UnityWebRequest request = UnityWebRequest.Get(url);
                 request.timeout = RequestTimeoutSeconds;
@@ -99,34 +99,45 @@ namespace CustomTimeService
 
                 if (request.result != UnityWebRequest.Result.Success)
                 {
-                    Logger.CreateWarning(this, nameof(SyncFromSources), url, request.error);
+                    Logger.CreateWarning(this, nameof(SyncFromSources), $"{name} failed ({url}): {request.error}");
                     continue;
                 }
 
                 string text = request.downloadHandler.text;
                 if (!parser(text, out DateTime serverUtcDate))
                 {
-                    Logger.CreateWarning(this, nameof(SyncFromSources), url, "unexpected response", text);
+                    Logger.CreateWarning(this, nameof(SyncFromSources), $"{name} sent an unexpected response ({url}): {text}");
                     continue;
                 }
 
                 // The server stamped its time somewhere during the round trip; the midpoint is the
                 // best estimate, so the stamp is half a round trip old by the time the response arrives.
-                double halfRoundTripSeconds = (responseRealtime - requestRealtime) / 2.0;
-                syncedUtcDate = serverUtcDate.AddSeconds(halfRoundTripSeconds);
-                syncedRealtime = responseRealtime;
+                double roundTripSeconds = responseRealtime - requestRealtime;
+                DateTime newSyncedUtcDate = serverUtcDate.AddSeconds(roundTripSeconds / 2.0);
 
-                if (!hasServerTime)
+                string adjustment;
+                if (hasServerTime)
                 {
-                    hasServerTime = true;
-                    Logger.CreateText(this, nameof(SyncFromSources), "synchronized with", url);
+                    DateTime extrapolatedUtcDate = syncedUtcDate.AddSeconds(responseRealtime - syncedRealtime);
+                    adjustment = $"corrected by {(newSyncedUtcDate - extrapolatedUtcDate).TotalMilliseconds:+0;-0;0} ms";
                 }
+                else
+                {
+                    adjustment = $"device clock was off by {(newSyncedUtcDate - DateTime.UtcNow).TotalMilliseconds:+0;-0;0} ms";
+                }
+
+                syncedUtcDate = newSyncedUtcDate;
+                syncedRealtime = responseRealtime;
+                hasServerTime = true;
+
+                Logger.CreateText(this, nameof(SyncFromSources),
+                    $"synchronized with {name}, round trip {roundTripSeconds * 1000.0:0} ms, {adjustment}");
                 yield break;
             }
 
             Logger.CreateError(this, nameof(SyncFromSources), hasServerTime
-                ? "no time source answered, extrapolating the last server time"
-                : "no time source answered, using the device clock");
+                ? "no time source answered, continuing from the last server time"
+                : "no time source answered, falling back to the device clock");
         }
 
         /// <summary>Parses Unix seconds with milliseconds, such as <c>1790255757.966</c>.</summary>
