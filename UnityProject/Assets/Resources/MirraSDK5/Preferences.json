@@ -9,7 +9,7 @@
                 "stringCollection": [
                     {
                         "key": "Configuration",
-                        "value": "EditorConfiguration"
+                        "value": "AppConfiguration"
                     }
                 ]
             }
@@ -23,7 +23,7 @@
                 "stringCollection": [
                     {
                         "key": "Configuration",
-                        "value": "FallbackConfiguration"
+                        "value": "AppConfiguration"
                     }
                 ]
             }

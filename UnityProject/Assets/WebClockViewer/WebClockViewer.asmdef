@@ -6,6 +6,7 @@
         "UniTask",
         "MirraGames.SDK",
         "MirraGames.SDK.Common",
+        "CustomTimeService",
         "reromanlee.ConsoleContainer"
     ],
     "includePlatforms": [],

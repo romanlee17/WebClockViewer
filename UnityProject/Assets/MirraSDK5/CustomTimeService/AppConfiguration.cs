@@ -11,6 +11,7 @@ namespace CustomTimeService
         public override string IconName => string.Empty;
         public override bool ReadOnly => false;
 
+        public override string AddressablesProviderName { get; } = "UnityEngineAddressables";
         public override string DateTimeProviderName { get; } = nameof(WebDateTime);
     }
 }
