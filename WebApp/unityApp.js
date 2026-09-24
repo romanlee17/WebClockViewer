@@ -197,9 +197,9 @@ const unityApp = {
         const loaderUrl = buildUrl + "/de823fdc9b0c941c4b387f66faa349c7.loader.js";
         const config = {
             arguments: [],
-            dataUrl: buildUrl + "/d5f0147bb71979ec27e808866200fc98.data.unityweb",
-            frameworkUrl: buildUrl + "/f9bd510424513ac6c955e8ac15835f01.framework.js.unityweb",
-            codeUrl: buildUrl + "/01c3d5e64218603753cf3134c6aa2b03.wasm.unityweb",
+            dataUrl: buildUrl + "/46cd359429a6711b22c4dc53c5215ed9.data.unityweb",
+            frameworkUrl: buildUrl + "/658ddd384a4233ac3697b6dfe0929075.framework.js.unityweb",
+            codeUrl: buildUrl + "/f79b43c0a49c098ff5f7e3b51f90eb65.wasm.unityweb",
             streamingAssetsUrl: "StreamingAssets",
             companyName: "Roman Likhadievski",
             productName: "WebClockViewer",
