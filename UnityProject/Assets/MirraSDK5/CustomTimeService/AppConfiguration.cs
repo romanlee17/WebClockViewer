@@ -12,6 +12,7 @@ namespace CustomTimeService
         public override bool ReadOnly => false;
 
         public override string AddressablesProviderName { get; } = "UnityEngineAddressables";
+        public override string DataProviderName { get; } = nameof(PlayerPrefsData);
         public override string DateTimeProviderName { get; } = nameof(WebDateTime);
     }
 }
