@@ -1,0 +1,121 @@
+*, *:before, *:after {
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    font-size: 0;
+    box-sizing: inherit;
+}
+
+html, body {
+    height: 100%;
+    background-color: #93a5ee;
+    /* REMOVE SCROLL BAR */
+    overflow: hidden;
+    /* REMOVE IOS LONG TAP */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    /* BACKGROUND BEHIND UNITY CONTAINER */
+    background-position: center center;
+    background-size: cover;
+    background-image: url('../gameBackground.png');
+}
+
+img {
+    /* PREVENT IMAGE DRAG AND DROP */
+    pointer-events: none;
+}
+
+#unity-container {
+    display: flex;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+#unity-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: none;
+}
+
+#diagnostics-icon {
+    position: fixed;
+    bottom: 10px;
+    right: 0px;
+}
+
+#diagnostics-icon, #diagnostics-overlay * {
+    font-size: 16px;
+    pointer-events: all;
+}
+
+#diagnostics-btn {
+    min-width: 40px;
+    min-height: 40px;
+}
+
+#unity-loading-bar {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: none
+}
+
+#unity-logo {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    width: 256px;
+    height: 256px;
+    border: 2px solid white;
+    border-bottom: 8px solid white;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    background-image: url('../gameIcon.png');
+    border-radius: 5px;
+}
+
+#unity-progress-bar-empty {
+    margin-left: auto;
+    margin-right: auto;
+    width: 256px;
+    height: 18px;
+    margin-top: 10px;
+    background: url('progress_empty_256.png') no-repeat center;
+}
+
+#unity-progress-bar-full {
+    width: 0%;
+    height: 18px;
+    margin-top: 10px;
+    background: url('progress_full_256.png') no-repeat center;
+}
+
+/* ADAPTATION FOR TOO SMALL DISPLAYS */
+@media (max-width: 500px), (max-height: 500px) {
+
+    #unity-logo {
+        width: 128px;
+        height: 128px;
+    }
+
+    #unity-progress-bar-empty {
+        width: 128px;
+        background: url('progress_empty_128.png') no-repeat center;
+    }
+
+    #unity-progress-bar-full {
+        height: 18px;
+        background: url('progress_full_128.png') no-repeat center;
+    }
+
+}

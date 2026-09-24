@@ -1,0 +1,50 @@
+{
+    "groupCollection": [
+        {
+            "key": "Editor",
+            "group": {
+                "boolCollection": [],
+                "intCollection": [],
+                "floatCollection": [],
+                "stringCollection": [
+                    {
+                        "key": "Configuration",
+                        "value": "EditorConfiguration"
+                    }
+                ]
+            }
+        },
+        {
+            "key": "Build",
+            "group": {
+                "boolCollection": [],
+                "intCollection": [],
+                "floatCollection": [],
+                "stringCollection": [
+                    {
+                        "key": "Configuration",
+                        "value": "FallbackConfiguration"
+                    }
+                ]
+            }
+        },
+        {
+            "key": "MirraWebConfiguration",
+            "group": {
+                "boolCollection": [
+                    {
+                        "key": "Framework_PropertyGroup.Visible",
+                        "value": false
+                    },
+                    {
+                        "key": "ITime.Visible",
+                        "value": false
+                    }
+                ],
+                "intCollection": [],
+                "floatCollection": [],
+                "stringCollection": []
+            }
+        }
+    ]
+}
