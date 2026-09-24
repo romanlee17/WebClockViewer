@@ -35,13 +35,13 @@ namespace WebClockViewer
         /// </summary>
         private CancellationTokenSource _appLifetimeSource;
 
-        private bool _isClockViewerLoaded;
-
         protected override void Configure(IContainerBuilder builder)
         {
             _consoleInstance.CreateText(this, nameof(Configure));
 
             builder.RegisterInstance<IConsoleInstance>(_consoleInstance);
+            // Disposed with the container, releasing whatever is still loaded when the app ends.
+            builder.Register<AddressableLoader>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<ClockTimeService>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<TimeEditingFlow>(Lifetime.Singleton);
         }
@@ -68,8 +68,8 @@ namespace WebClockViewer
                 _consoleInstance.CreateText(this, nameof(MainEntry), "time synchronized");
 
                 // The instance keeps using the prefab's assets, so the prefab stays loaded until the app ends.
-                _isClockViewerLoaded = true;
-                GameObject clockViewerPrefab = await AddressableLoader.LoadAsync<GameObject>(ClockViewerAddress, cancellationToken);
+                IAddressableLoader addressableLoader = Container.Resolve<IAddressableLoader>();
+                GameObject clockViewerPrefab = await addressableLoader.LoadAsync<GameObject>(ClockViewerAddress, cancellationToken);
                 ClockViewer clockViewer = Container.Instantiate(clockViewerPrefab).GetComponent<ClockViewer>();
                 await clockViewer.InitializeAsync(cancellationToken);
 
@@ -137,13 +137,7 @@ namespace WebClockViewer
             _appLifetimeSource?.Dispose();
             _appLifetimeSource = null;
 
-            if (_isClockViewerLoaded)
-            {
-                // Bug in MirraSDK: instance is already destroyed, so the addressable is never released.
-                MirraSDK.Assets.ReleaseAddressable(ClockViewerAddress);
-                _isClockViewerLoaded = false;
-            }
-
+            // Disposes the container, and with it AddressableLoader, which releases the prefabs.
             base.OnDestroy();
         }
     }

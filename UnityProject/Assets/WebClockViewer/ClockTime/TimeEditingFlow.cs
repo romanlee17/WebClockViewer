@@ -1,5 +1,4 @@
 using Cysharp.Threading.Tasks;
-using MirraGames.SDK;
 using reromanlee.ConsoleContainer;
 using System;
 using System.Threading;
@@ -12,23 +11,26 @@ namespace WebClockViewer
 {
     /// <summary>
     /// Lets the user edit a clock: opens the time picker for it and applies the choice to
-    /// <see cref="IClockTimeEditor"/>. The picker prefab is loaded on first use and kept loaded.
+    /// <see cref="IClockTimeEditor"/>. The picker prefab is loaded on first use and kept loaded
+    /// until <see cref="IAddressableLoader"/> releases it at the end of the app.
     /// </summary>
-    internal sealed class TimeEditingFlow : IDisposable
+    internal sealed class TimeEditingFlow
     {
         private const string DialogAddress = "TimePickerDialog";
 
         private readonly IClockTimeEditor _clockTime;
+        private readonly IAddressableLoader _addressableLoader;
         private readonly IObjectResolver _resolver;
         private readonly IConsoleInstance _consoleInstance;
 
         private GameObject _dialogPrefab;
-        private bool _isDialogLoaded;
         private bool _isEditing;
 
-        public TimeEditingFlow(IClockTimeEditor clockTime, IObjectResolver resolver, IConsoleInstance consoleInstance)
+        public TimeEditingFlow(IClockTimeEditor clockTime, IAddressableLoader addressableLoader,
+            IObjectResolver resolver, IConsoleInstance consoleInstance)
         {
             _clockTime = clockTime;
+            _addressableLoader = addressableLoader;
             _resolver = resolver;
             _consoleInstance = consoleInstance;
         }
@@ -100,18 +102,8 @@ namespace WebClockViewer
                 return _dialogPrefab;
             }
 
-            _isDialogLoaded = true;
-            _dialogPrefab = await AddressableLoader.LoadAsync<GameObject>(DialogAddress, cancellationToken);
+            _dialogPrefab = await _addressableLoader.LoadAsync<GameObject>(DialogAddress, cancellationToken);
             return _dialogPrefab;
-        }
-
-        public void Dispose()
-        {
-            if (_isDialogLoaded)
-            {
-                MirraSDK.Assets.ReleaseAddressable(DialogAddress);
-                _isDialogLoaded = false;
-            }
         }
     }
 }
