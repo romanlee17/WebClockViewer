@@ -35,13 +35,15 @@ namespace WebClockViewer
         /// </summary>
         private CancellationTokenSource _appLifetimeSource;
 
-        private bool _isClockViewerLoaded;
-
         protected override void Configure(IContainerBuilder builder)
         {
             _consoleInstance.CreateText(this, nameof(Configure));
 
             builder.RegisterInstance<IConsoleInstance>(_consoleInstance);
+            // Disposed with the container, releasing whatever is still loaded when the app ends.
+            builder.Register<AddressableLoader>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.Register<ClockTimeService>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.Register<TimeEditingFlow>(Lifetime.Singleton);
         }
 
         private void Start()
@@ -65,9 +67,14 @@ namespace WebClockViewer
                 await WaitForTimeSynchronization(cancellationToken);
                 _consoleInstance.CreateText(this, nameof(MainEntry), "time synchronized");
 
-                GameObject clockViewerPrefab = await LoadClockViewerPrefab(cancellationToken);
+                // The instance keeps using the prefab's assets, so the prefab stays loaded until the app ends.
+                IAddressableLoader addressableLoader = Container.Resolve<IAddressableLoader>();
+                GameObject clockViewerPrefab = await addressableLoader.LoadAsync<GameObject>(ClockViewerAddress, cancellationToken);
                 ClockViewer clockViewer = Container.Instantiate(clockViewerPrefab).GetComponent<ClockViewer>();
                 await clockViewer.InitializeAsync(cancellationToken);
+
+                TimeEditingFlow timeEditingFlow = Container.Resolve<TimeEditingFlow>();
+                clockViewer.EditRequested += zone => EditTime(timeEditingFlow, zone, cancellationToken).Forget();
 
                 _consoleInstance.CreateText(this, nameof(MainEntry), "clock viewer initialized");
             }
@@ -89,18 +96,21 @@ namespace WebClockViewer
             await synchronizedSource.Task.AttachExternalCancellation(cancellationToken);
         }
 
-        private async UniTask<GameObject> LoadClockViewerPrefab(CancellationToken cancellationToken)
+        private async UniTaskVoid EditTime(TimeEditingFlow timeEditingFlow, ClockZone zone, CancellationToken cancellationToken)
         {
-            UniTaskCompletionSource<GameObject> loadSource = new();
-            MirraSDK.Assets.LoadAddressable<GameObject>(
-                ClockViewerAddress,
-                onSuccess: prefab => loadSource.TrySetResult(prefab),
-                onError: () => loadSource.TrySetException(
-                    new InvalidOperationException($"Failed to load addressable '{ClockViewerAddress}'.")));
-
-            // The instance keeps using the prefab's assets, so the prefab stays loaded until the app ends.
-            _isClockViewerLoaded = true;
-            return await loadSource.Task.AttachExternalCancellation(cancellationToken);
+            try
+            {
+                await timeEditingFlow.EditAsync(zone, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // The app ended while the picker was open.
+            }
+            catch (Exception exception)
+            {
+                // A failed edit leaves the clocks as they were, so the app keeps running.
+                _consoleInstance.CreateError(this, nameof(EditTime), exception.ToString());
+            }
         }
 
         private void CancelAppLifetime()
@@ -127,13 +137,7 @@ namespace WebClockViewer
             _appLifetimeSource?.Dispose();
             _appLifetimeSource = null;
 
-            if (_isClockViewerLoaded)
-            {
-                // Bug in MirraSDK: instance is already destroyed, so the addressable is never released.
-                MirraSDK.Assets.ReleaseAddressable(ClockViewerAddress);
-                _isClockViewerLoaded = false;
-            }
-
+            // Disposes the container, and with it AddressableLoader, which releases the prefabs.
             base.OnDestroy();
         }
     }

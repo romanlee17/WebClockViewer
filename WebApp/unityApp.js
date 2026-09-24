@@ -194,12 +194,12 @@ const unityApp = {
         const progressBarFull = document.querySelector("#unity-progress-bar-full");
 
         const buildUrl = "Build";
-        const loaderUrl = buildUrl + "/de823fdc9b0c941c4b387f66faa349c7.loader.js";
+        const loaderUrl = buildUrl + "/813700ccfaf64a0a3c57e3aa3166490b.loader.js";
         const config = {
             arguments: [],
-            dataUrl: buildUrl + "/b10a24b1293ec9d4c4f9165b556362ef.data.unityweb",
-            frameworkUrl: buildUrl + "/712a66f9e510a0d6531329fe2aee34e3.framework.js.unityweb",
-            codeUrl: buildUrl + "/7078051ae7674630203ddba226da9688.wasm.unityweb",
+            dataUrl: buildUrl + "/237564a3b8f9bcea4ed65d2472479487.data.unityweb",
+            frameworkUrl: buildUrl + "/689d1593c06f67d7bc6bce48571e5fe5.framework.js.unityweb",
+            codeUrl: buildUrl + "/ab22a6105d00f859063a6d3120f76be6.wasm.unityweb",
             streamingAssetsUrl: "StreamingAssets",
             companyName: "Roman Likhadievski",
             productName: "WebClockViewer",
