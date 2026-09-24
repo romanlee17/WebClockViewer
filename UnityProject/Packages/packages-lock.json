@@ -7,6 +7,14 @@
       "dependencies": {},
       "hash": "ceac8d6946b1125fe782cd171fbcb245b567dbf9"
     },
+    "com.romanlee17.mirrasdk5": {
+      "version": "file:D:/github-romanlee17/SDK5",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.addressables": "1.0.0"
+      }
+    },
     "com.unity.addressables": {
       "version": "1.25.0",
       "depth": 1,
