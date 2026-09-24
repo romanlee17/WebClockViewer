@@ -1,13 +1,9 @@
 {
-    "name": "WebClockViewer",
-    "rootNamespace": "WebClockViewer",
+    "name": "CustomTimeService",
+    "rootNamespace": "CustomTimeService",
     "references": [
-        "VContainer",
-        "UniTask",
-        "MirraGames.SDK",
         "MirraGames.SDK.Common",
-        "CustomTimeService",
-        "reromanlee.ConsoleContainer"
+        "MirraGames.SDK.Fallback"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

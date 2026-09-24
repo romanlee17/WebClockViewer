@@ -9,7 +9,7 @@
                 "stringCollection": [
                     {
                         "key": "Configuration",
-                        "value": "EditorConfiguration"
+                        "value": "AppConfiguration"
                     }
                 ]
             }
@@ -23,7 +23,7 @@
                 "stringCollection": [
                     {
                         "key": "Configuration",
-                        "value": "FallbackConfiguration"
+                        "value": "AppConfiguration"
                     }
                 ]
             }
@@ -38,6 +38,32 @@
                     },
                     {
                         "key": "ITime.Visible",
+                        "value": true
+                    },
+                    {
+                        "key": "ITime.Override",
+                        "value": false
+                    }
+                ],
+                "intCollection": [],
+                "floatCollection": [],
+                "stringCollection": []
+            }
+        },
+        {
+            "key": "AppConfiguration",
+            "group": {
+                "boolCollection": [
+                    {
+                        "key": "ITime.Visible",
+                        "value": true
+                    },
+                    {
+                        "key": "ITime.Override",
+                        "value": true
+                    },
+                    {
+                        "key": "IAchievements.Visible",
                         "value": false
                     }
                 ],
