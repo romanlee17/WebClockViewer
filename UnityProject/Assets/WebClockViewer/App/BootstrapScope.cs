@@ -34,7 +34,9 @@ namespace WebClockViewer
 
         protected override void Configure(IContainerBuilder builder)
         {
+            _consoleInstance.CreateText(this, nameof(Configure));
 
+            builder.RegisterInstance<IConsoleInstance>(_consoleInstance);
         }
 
         private void Start()
