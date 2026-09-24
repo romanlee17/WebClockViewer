@@ -45,7 +45,7 @@ namespace WebClockViewer
             DateTime currentDate = MirraSDK.Time.CurrentDate;
             DateTime utcDate = currentDate.ToUniversalTime();
 
-            _utcTimeText.text = $"UTC+0: {utcDate:HH:mm:ss}";
+            _utcTimeText.text = $"UTC: {utcDate:HH:mm:ss}";
             _localTimeText.text = $"Local time: {currentDate:HH:mm:ss}";
         }
     }
