@@ -2,6 +2,7 @@ using MirraGames.SDK.Common;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.Networking;
 using Logger = MirraGames.SDK.Common.Logger;
@@ -13,23 +14,38 @@ namespace CustomTimeService
     /// Serves the date from a time server instead of the device clock. The server time is anchored
     /// to <see cref="Time.realtimeSinceStartupAsDouble"/> on every sync, so between syncs the date
     /// advances with the unscaled startup clock and never with the device clock, which the user can
-    /// change.
+    /// change. Sources are tried in order; when none answers, the last server time keeps being
+    /// extrapolated, and before any server has answered the device clock is the safety net.
     /// </summary>
     [Provider(typeof(IDateTime))]
     public class WebDateTime : CommonDateTime
     {
 
-        private const string SyncUrl = "https://yandex.com/time/sync.json";
-        private const int RequestTimeoutSeconds = 10;
+        private delegate bool TimeParser(string text, out DateTime utcDate);
+
+        /// <summary>
+        /// Both endpoints allow cross-origin requests, which WebGL builds need, and answer with
+        /// no-cache headers, so the browser never serves a stale time.
+        /// </summary>
+        private static readonly (string url, TimeParser parser)[] timeSources =
+        {
+            ("https://time.akamai.com/?ms", TryParseAkamai),
+            ("https://www.cloudflare.com/cdn-cgi/trace", TryParseCloudflare),
+        };
+
+        private const int RequestTimeoutSeconds = 5;
 
         private static readonly List<Action> onSynchronizedActions = new();
 
-        /// <summary>True once the first request to the time server has succeeded.</summary>
+        /// <summary>
+        /// True once the first sync attempt has finished, whether it reached a time server or fell
+        /// back to the device clock.
+        /// </summary>
         public static bool IsSynchronized { get; private set; }
 
         /// <summary>
-        /// Invokes <paramref name="onSynchronized"/> once the first sync has succeeded, right away
-        /// when it already has. <see cref="IDateTime"/> is not awaitable in MirraSDK, so
+        /// Invokes <paramref name="onSynchronized"/> once the first sync attempt has finished, right
+        /// away when it already has. <see cref="IDateTime"/> is not awaitable in MirraSDK, so
         /// <c>WaitForProviders</c> does not wait for the sync and callers wait here instead.
         /// </summary>
         public static void WaitForSynchronization(Action onSynchronized)
@@ -44,8 +60,8 @@ namespace CustomTimeService
         }
 
         private readonly WaitForSecondsRealtime syncInterval = new(15.0f);
-        private readonly WaitForSecondsRealtime retryInterval = new(2.0f);
 
+        private bool hasServerTime;
         private DateTime syncedUtcDate;
         private double syncedRealtime;
 
@@ -58,58 +74,98 @@ namespace CustomTimeService
         {
             while (true)
             {
-                yield return RequestServerTime();
-                // Until the first success the app is waiting on us, so retry sooner than the
-                // regular resync.
-                yield return IsSynchronized ? syncInterval : retryInterval;
+                yield return SyncFromSources();
+
+                if (!IsSynchronized)
+                {
+                    IsSynchronized = true;
+                    InvokeSynchronizedActions();
+                }
+
+                yield return syncInterval;
             }
         }
 
-        private IEnumerator RequestServerTime()
+        private IEnumerator SyncFromSources()
         {
-            using UnityWebRequest request = UnityWebRequest.Get(SyncUrl);
-            request.timeout = RequestTimeoutSeconds;
-
-            double requestRealtime = Time.realtimeSinceStartupAsDouble;
-            yield return request.SendWebRequest();
-            double responseRealtime = Time.realtimeSinceStartupAsDouble;
-
-            if (request.result != UnityWebRequest.Result.Success)
+            foreach ((string url, TimeParser parser) in timeSources)
             {
-                Logger.CreateError(this, nameof(RequestServerTime), request.error);
+                using UnityWebRequest request = UnityWebRequest.Get(url);
+                request.timeout = RequestTimeoutSeconds;
+
+                double requestRealtime = Time.realtimeSinceStartupAsDouble;
+                yield return request.SendWebRequest();
+                double responseRealtime = Time.realtimeSinceStartupAsDouble;
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Logger.CreateWarning(this, nameof(SyncFromSources), url, request.error);
+                    continue;
+                }
+
+                string text = request.downloadHandler.text;
+                if (!parser(text, out DateTime serverUtcDate))
+                {
+                    Logger.CreateWarning(this, nameof(SyncFromSources), url, "unexpected response", text);
+                    continue;
+                }
+
+                // The server stamped its time somewhere during the round trip; the midpoint is the
+                // best estimate, so the stamp is half a round trip old by the time the response arrives.
+                double halfRoundTripSeconds = (responseRealtime - requestRealtime) / 2.0;
+                syncedUtcDate = serverUtcDate.AddSeconds(halfRoundTripSeconds);
+                syncedRealtime = responseRealtime;
+
+                if (!hasServerTime)
+                {
+                    hasServerTime = true;
+                    Logger.CreateText(this, nameof(SyncFromSources), "synchronized with", url);
+                }
                 yield break;
             }
 
-            SyncResponse response;
-            try
+            Logger.CreateError(this, nameof(SyncFromSources), hasServerTime
+                ? "no time source answered, extrapolating the last server time"
+                : "no time source answered, using the device clock");
+        }
+
+        /// <summary>Parses Unix seconds with milliseconds, such as <c>1790255757.966</c>.</summary>
+        private static bool TryParseAkamai(string text, out DateTime utcDate)
+        {
+            return TryParseUnixSeconds(text.Trim(), out utcDate);
+        }
+
+        /// <summary>Parses the <c>ts=</c> line out of the trace's <c>key=value</c> lines.</summary>
+        private static bool TryParseCloudflare(string text, out DateTime utcDate)
+        {
+            const string timestampPrefix = "ts=";
+            foreach (string line in text.Split('\n'))
             {
-                response = JsonUtility.FromJson<SyncResponse>(request.downloadHandler.text);
-            }
-            catch (Exception exception)
-            {
-                Logger.CreateError(this, nameof(RequestServerTime), exception);
-                yield break;
+                if (line.StartsWith(timestampPrefix, StringComparison.Ordinal)
+                    && TryParseUnixSeconds(line.Substring(timestampPrefix.Length).Trim(), out utcDate))
+                {
+                    // The trace truncates to whole seconds, so the true time lies anywhere in the
+                    // following second; its middle halves the worst-case error.
+                    utcDate = utcDate.AddSeconds(0.5);
+                    return true;
+                }
             }
 
-            if (response == null || response.time <= 0)
+            utcDate = default;
+            return false;
+        }
+
+        private static bool TryParseUnixSeconds(string text, out DateTime utcDate)
+        {
+            if (decimal.TryParse(text, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out decimal seconds)
+                && seconds > 0)
             {
-                Logger.CreateError(this, nameof(RequestServerTime), request.downloadHandler.text);
-                yield break;
+                utcDate = DateTimeOffset.FromUnixTimeMilliseconds((long)(seconds * 1000)).UtcDateTime;
+                return true;
             }
 
-            // The server stamped its time somewhere during the round trip; the midpoint is the best
-            // estimate, so the stamp is half a round trip old by the time the response arrives.
-            double halfRoundTripSeconds = (responseRealtime - requestRealtime) / 2.0;
-            syncedUtcDate = DateTimeOffset.FromUnixTimeMilliseconds(response.time).UtcDateTime
-                .AddSeconds(halfRoundTripSeconds);
-            syncedRealtime = responseRealtime;
-
-            if (!IsSynchronized)
-            {
-                IsSynchronized = true;
-                Logger.CreateText(this, nameof(RequestServerTime), "synchronized");
-                InvokeSynchronizedActions();
-            }
+            utcDate = default;
+            return false;
         }
 
         private static void InvokeSynchronizedActions()
@@ -131,7 +187,7 @@ namespace CustomTimeService
 
         protected override DateTime GetCurrentDateImpl()
         {
-            if (!IsSynchronized)
+            if (!hasServerTime)
             {
                 return DateTime.Now;
             }
@@ -151,12 +207,6 @@ namespace CustomTimeService
                 4 when day == 4 => HolidayType.Easter,
                 _ => HolidayType.None,
             };
-        }
-
-        [Serializable]
-        private class SyncResponse
-        {
-            public long time = default;
         }
 
     }
