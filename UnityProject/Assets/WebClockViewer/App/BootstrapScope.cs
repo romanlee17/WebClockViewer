@@ -65,7 +65,9 @@ namespace WebClockViewer
                 await WaitForTimeSynchronization(cancellationToken);
                 _consoleInstance.CreateText(this, nameof(MainEntry), "time synchronized");
 
-                GameObject clockViewerPrefab = await LoadClockViewerPrefab(cancellationToken);
+                // The instance keeps using the prefab's assets, so the prefab stays loaded until the app ends.
+                _isClockViewerLoaded = true;
+                GameObject clockViewerPrefab = await AddressableLoader.LoadAsync<GameObject>(ClockViewerAddress, cancellationToken);
                 ClockViewer clockViewer = Container.Instantiate(clockViewerPrefab).GetComponent<ClockViewer>();
                 await clockViewer.InitializeAsync(cancellationToken);
 
@@ -87,20 +89,6 @@ namespace WebClockViewer
             UniTaskCompletionSource synchronizedSource = new();
             WebDateTime.WaitForSynchronization(() => synchronizedSource.TrySetResult());
             await synchronizedSource.Task.AttachExternalCancellation(cancellationToken);
-        }
-
-        private async UniTask<GameObject> LoadClockViewerPrefab(CancellationToken cancellationToken)
-        {
-            UniTaskCompletionSource<GameObject> loadSource = new();
-            MirraSDK.Assets.LoadAddressable<GameObject>(
-                ClockViewerAddress,
-                onSuccess: prefab => loadSource.TrySetResult(prefab),
-                onError: () => loadSource.TrySetException(
-                    new InvalidOperationException($"Failed to load addressable '{ClockViewerAddress}'.")));
-
-            // The instance keeps using the prefab's assets, so the prefab stays loaded until the app ends.
-            _isClockViewerLoaded = true;
-            return await loadSource.Task.AttachExternalCancellation(cancellationToken);
         }
 
         private void CancelAppLifetime()
