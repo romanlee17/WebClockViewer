@@ -1,0 +1,17 @@
+{
+    "name": "CustomTimeService",
+    "rootNamespace": "CustomTimeService",
+    "references": [
+        "MirraGames.SDK.Common",
+        "MirraGames.SDK.Fallback"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
