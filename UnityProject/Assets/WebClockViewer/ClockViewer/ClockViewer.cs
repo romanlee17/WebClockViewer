@@ -11,7 +11,7 @@ namespace WebClockViewer
         [SerializeField] private Text _utcTimeText;
         [SerializeField] private Text _localTimeText;
 
-        private async void Start()
+        public async UniTask Initialize()
         {
             await ClockUpdateTask();
         }
